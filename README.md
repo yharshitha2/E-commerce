@@ -12,6 +12,7 @@ Code right here in sections. Here's a basic setup using the MERN stack (MongoDB,
 1.3 routes/productRoutes.js
 
 🎨 Step 2: Frontend (/client using React)
+
 2.1 App.js
 
 2.2 App.css (Basic Styling)
