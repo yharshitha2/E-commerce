@@ -1,24 +1,134 @@
-# Compiled class file
-*.class
 
-# Log file
-*.log
+🧠 Step 1: Backend (/server folder)
+1.1 server.js – Entry Point
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const productRoutes = require('./routes/productRoutes');
 
-# BlueJ files
-*.ctxt
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+mongoose.connect('mongodb://localhost:27017/ecommerce', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("MongoDB connected"))
+  .catch(err => console.log(err));
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+app.use('/api/products', productRoutes);
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+app.listen(5000, () => {
+    console.log("Server running on http://localhost:5000");
+});
+
+1.2 models/Product.js
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    price: Number,
+    imageUrl: String,
+    category: String
+});
+
+module.exports = mongoose.model('Product', productSchema);
+
+1.3 routes/productRoutes.js
+const express = require('express');
+const router = express.Router();
+const Product = require('../models/Product');
+
+// Get all products
+router.get('/', async (req, res) => {
+    const products = await Product.find();
+    res.json(products);
+});
+
+// Create product (for testing or admin use)
+router.post('/', async (req, res) => {
+    const newProduct = new Product(req.body);
+    const saved = await newProduct.save();
+    res.json(saved);
+});
+
+module.exports = router;
+
+🎨 Step 2: Frontend (/client using React)
+2.1 App.js
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import './App.css';
+
+function App() {
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/products')
+      .then(res => setProducts(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const addToCart = (product) => {
+    setCart([...cart, product]);
+  };
+
+  return (
+    <div className="App">
+      <h1>Local Store</h1>
+      <div className="products">
+        {products.map(product => (
+          <div className="card" key={product._id}>
+            <img src={product.imageUrl} alt={product.name} />
+            <h2>{product.name}</h2>
+            <p>${product.price}</p>
+            <button onClick={() => addToCart(product)}>Add to Cart</button>
+          </div>
+        ))}
+      </div>
+      <h2>🛒 Cart ({cart.length})</h2>
+      <ul>
+        {cart.map((item, i) => (
+          <li key={i}>{item.name} - ${item.price}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
+
+2.2 App.css (Basic Styling)
+.App {
+  font-family: sans-serif;
+  padding: 2rem;
+}
+
+.products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  width: 200px;
+}
+
+.card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+📦 Step 3: Sample Product Data (POST using Postman or script)
+{
+  "name": "Organic Honey",
+  "description": "Local farm honey",
+  "price": 12.99,
+  "imageUrl": "https://example.com/honey.jpg",
+  "category": "Grocery"
+}
